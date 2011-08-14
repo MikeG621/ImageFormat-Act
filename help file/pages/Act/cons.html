@@ -1,0 +1,38 @@
+<HTML>
+<HEAD>
+  <TITLE>Act Constructors (Idmr.ImageFormat)</TITLE>
+  <link rel="stylesheet" type="text/css" href="../stylesheet.css" />
+</HEAD>
+<BODY>
+<Object type="application/x-oleobject" classid="clsid:$CLSID$">
+	<param name="Keyword" value="Constructors">
+</OBJECT>
+  <h1>Act Constructors</h1>
+  <B>Namespace:</B> Idmr.ImageFormat<BR>
+  <B>Assembly:</B> Idmr.ImageFormat.Act.dll<BR>
+  <B>Syntax:</B><br>
+  &nbsp;&nbsp;<span>public</span> Act(<span>string</span> file)<BR>
+  &nbsp;&nbsp;<span>public</span> Act(System.Drawing.<span>Bitmap</span> image)<BR>
+  <hr>
+  <h3>Parameters</h3>
+  <TABLE>
+	<TR><TH class=namecol>Name</TH><TH>Description</TH></TR>
+	<TR><TD>file</TD><TD>Full path to the existing ACT file to be opened</TD></TR>
+	<TR><TD>image</TD><TD>Image to be used as the new ACT</TD></TR>
+  </TABLE>
+  <h3>Exceptions</h3>
+  <TABLE>
+    <TR><TH class=namecol>Name</TH><TH>Condition</TH></TR>
+	<TR><TD>ArgumentException</TD><TD>File is not a valid LucasArts Act Image File</TD></TR>
+	<TR><TD>UnauthorizedAccessException</TD><TD>File may be open by another process</TD></TR>
+	<TR><TD>IO.FileNotFoundException</TD><TD>File is not located at <i>file</i></TD></TR>
+  </TABLE>
+  <hr>
+  <h2>Remarks</h2>
+  When using <i>image</i>, <a href="fpath.html">FilePath</a> defaults to "NewImage.act", the palette is initialized as 256 colors and the image is processed via <a href="sfrm.html">SetFrame( )</a>.
+  <hr>
+  Copyright (C) 2010 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
+  This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.
+  <HR>
+</BODY>
+</HTML>
