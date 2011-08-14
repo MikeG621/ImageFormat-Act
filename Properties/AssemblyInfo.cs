@@ -1,6 +1,6 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
- * Copyright (C) 2009 Michael Gaisser (mjgaisser@gmail.com)
+ * Copyright (C) 2009-2011 Michael Gaisser (mjgaisser@gmail.com)
  * 
  * Full notice in Act.cs
  */
@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Imperial Department of Military Research")]
 [assembly: AssemblyProduct("Idmr.ImageFormat.Act")]
-[assembly: AssemblyCopyright("Copyright © Michael Gaisser 2009")]
+[assembly: AssemblyCopyright("Copyright © Michael Gaisser 2009-2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

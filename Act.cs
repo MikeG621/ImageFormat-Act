@@ -1,6 +1,6 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
- * Copyright (C) 2009 Michael Gaisser (mjgaisser@gmail.com)
+ * Copyright (C) 2009-2011 Michael Gaisser (mjgaisser@gmail.com)
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
