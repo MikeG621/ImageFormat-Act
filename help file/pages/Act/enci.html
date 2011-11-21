@@ -1,0 +1,39 @@
+<HTML>
+<HEAD>
+  <TITLE>Act.EncodeImage(Bitmap, Color[], int) (Idmr.ImageFormat)</TITLE>
+  <link rel="stylesheet" type="text/css" href="../stylesheet.css" />
+</HEAD>
+<BODY>
+<Object type="application/x-oleobject" classid="clsid:$CLSID$">
+	<param name="Keyword" value="EncodeImage">
+	<param name="Keyword" value="Methods">
+</OBJECT>
+  <h1>Act.EncodeImage(Bitmap, Color[], int)</h1>
+  <B>Namespace:</B> Idmr.ImageFormat<BR>
+  <B>Assembly:</B> Idmr.ImageFormat.Act.dll<BR>
+  <B>Syntax:</B><span>public static byte</span>[] EncodeImage(System.Drawing.<span>Bitmap</span> image, System.Drawing.<span>Color</span>[] colors, <span>int</span> shift)<BR>
+  <hr>
+  <h3>Parameters</h3>
+  <TABLE>
+	<TR><TH class=namecol>Name</TH><TH>Description</TH></TR>
+	<TR><TD>colors</TD><TD>Defined Color array to be used</TD></TR>
+	<TR><TD>image</TD><TD>Image to be encoded</TD></TR>
+	<TR><TD>shift</TD><TD>Shift value to encode with</TD></TR>
+  </TABLE>
+  <h3>Exceptions</h3>
+  <TABLE>
+    <TR><TH class=namecol>Name</TH><TH>Condition</TH></TR>
+	<TR><TD>ArgumentException</TD><TD><i>Image</i> is not 8bppIndexed or invalid <i>shift</i> value</TD></TR>
+  </TABLE>
+  <hr>
+  <h3>Returns</h3>
+  Encoded Rows byte array ready for writing to file<br>
+  <hr>
+  <h2>Remarks</h2>
+  <i>image</i> must be 8bppIndexed.  <i>shift</i> restricted to 3-5.<br>
+  <hr>
+  Copyright (C) 2011 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
+  This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.
+  <HR>
+</BODY>
+</HTML>

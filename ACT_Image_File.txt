@@ -1,7 +1,7 @@
 ACT Image File
 Author: Michael Gaisser (mjgaisser@gmail.com)
 Site: http://idmr.empirereborn.net
-Updated: 2010.12.03
+Updated: 2011.11.10
 =====
 
 The .ACT file is primarily used for backdrops and explosion graphics in TIE95
@@ -159,9 +159,9 @@ it only takes one argument, NumRepeat. The ColorIndex value is always zero. FD
 (Repeat) however is the same, and requires both NumRepeat and ColorIndex in
 that order. FE is still EndRow, and FF is similarly EndFrame.
 
-The pixel data is stored right-to-left, so a FlipX is required if you're
-reading the pixels normally. Idmr.ImageFormat.Act.dll takes this into account
-so what you import is what you see in-game.
+The pixel data is stored right-to-left, bottom to top, so a FlipXY is required
+if you're reading the pixels normally. Idmr.ImageFormat.Act.dll takes this into
+account so what you import is what you see in-game.
 
 FB (Shift) is a new op code. It takes two arguments, IndexShift and NumRepeat.
 The Shift code typically preceeds a Short code (explained below) and usually

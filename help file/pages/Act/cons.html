@@ -23,13 +23,12 @@
   <h3>Exceptions</h3>
   <TABLE>
     <TR><TH class=namecol>Name</TH><TH>Condition</TH></TR>
-	<TR><TD>ArgumentException</TD><TD>File is not a valid LucasArts Act Image File</TD></TR>
-	<TR><TD>UnauthorizedAccessException</TD><TD>File may be open by another process</TD></TR>
-	<TR><TD>IO.FileNotFoundException</TD><TD>File is not located at <i>file</i></TD></TR>
+	<TR><TD>Idmr.Common.LoadFileException</TD><TD>Error loading <i>file</i>, check InnerException</TD></TR>
+	<TR><TD>Idmr.Common.BoundaryException</TD><TD><i>image</i> exceed allowable size</TD></TR>
   </TABLE>
   <hr>
   <h2>Remarks</h2>
-  When using <i>image</i>, <a href="fpath.html">FilePath</a> defaults to "NewImage.act", the palette is initialized as 256 colors and the image is processed via <a href="sfrm.html">SetFrame( )</a>.
+  When using <i>image</i>, <a href="fpath.html">FilePath</a> defaults to "NewImage.act", the palette is initialized as 256 colors and the image is processed via <a href="sfrm.html">SetFrameImage( )</a>.
   <hr>
   Copyright (C) 2010 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
   This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.

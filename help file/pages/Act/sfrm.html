@@ -1,36 +1,36 @@
 <HTML>
 <HEAD>
-  <TITLE>Act.SetFrame(int, System.Drawing.Bitmap) (Idmr.ImageFormat)</TITLE>
+  <TITLE>Act.SetFrameImage(int, System.Drawing.Bitmap) (Idmr.ImageFormat)</TITLE>
   <link rel="stylesheet" type="text/css" href="../stylesheet.css" />
 </HEAD>
 <BODY>
 <Object type="application/x-oleobject" classid="clsid:$CLSID$">
-	<param name="Keyword" value="SetFrame">
+	<param name="Keyword" value="SetFrameImage">
 	<param name="Keyword" value="Methods">
 	<param name="Keyword" value="Modifiers">
 </OBJECT>
-  <h1>Act.SetFrame(int, System.Drawing.Bitmap)</h1>
+  <h1>Act.SetFrameImage(int, System.Drawing.Bitmap)</h1>
   <B>Namespace:</B> Idmr.ImageFormat<BR>
   <B>Assembly:</B> Idmr.ImageFormat.Act.dll<BR>
-  <B>Syntax:</B> <span>public void</span> SetFrame(<span>int</span> frame, System.Drawing.<span>Bitmap</span> image)<BR>
+  <B>Syntax:</B> <span>public void</span> SetFrameImage(<span>int</span> index, System.Drawing.<span>Bitmap</span> image)<BR>
   <hr>
   <h3>Parameters</h3>
   <TABLE>
 	<TR><TH class=namecol>Name</TH><TH>Description</TH></TR>
-	<TR><TD>frame</TD><TD>Zero-indexed frame</TD></TR>
-	<TR><TD>image</TD><TD>New image. If image PixelFormat is Indexed image's palette is used, else existing is</TD></TR>
+	<TR><TD>image</TD><TD>New image. If 8bppIndexed, image's palette is used, else existing is</TD></TR>
+	<TR><TD>index</TD><TD>Zero-indexed frame</TD></TR>
   </TABLE>
   <h3>Exceptions</h3>
   <TABLE>
     <TR><TH class=namecol>Name</TH><TH>Condition</TH></TR>
-	<TR><TD>ArgumentException</TD><TD><i>image</i> is larger than Act.Size or 256x256</TD></TR>
-	<TR><TD>IndexOutOfRangeException</TD><TD>Invalid <i>frame</i> value</TD></TR>
+	<TR><TD>Idmr.Common.BoundaryException</TD><TD><i>image</i> exceeds allowable size</TD></TR>
+	<TR><TD>IndexOutOfRangeException</TD><TD>Invalid <i>index</i> value</TD></TR>
   </TABLE>
   <hr>
   <h2>Remarks</h2>
-  Image is converted to 8bppIndexed. Frame palette is trimmed to only the colors used in the image and the frame's NumberOfColors is updated. If SetFrame( ) has been called from the <a href="cons.html">Act(Bitmap)</a> constructor and the image is not Indexed, palette is the 256-color default.
+  Image is converted to 8bppIndexed. Frame palette is trimmed to only the colors used in the image and the frame's NumberOfColors is updated. If called from the <a href="cons.html">Act(Bitmap)</a> constructor and the image is not Indexed, palette is the 256-color default.
   <hr>
-  Copyright (C) 2010 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
+  Copyright (C) 2011 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
   This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.
   <HR>
 </BODY>

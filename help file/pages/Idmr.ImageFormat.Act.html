@@ -14,7 +14,8 @@
   <B>Assembly:</B> Idmr.ImageFormat.Act.dll<BR>
   <B>Additional References:</B><BR>
   &nbsp;&nbsp;&nbsp;System.Drawing<br>
-  <B>Version:</B> 1.0<BR>
+  &nbsp;&nbsp;&nbsp;Idmr.Common<br>
+  <B>Version:</B> 2.0<BR>
   <B>Syntax:</B> <span>public class</span> Act<BR><BR>
   <hr><h2>Members</h2><hr>
   <h3>Constructors</h3>
@@ -26,13 +27,11 @@
   <h3>Methods</h3>
   <TABLE>
 	<TR><TH class=iconcol></TH><TH class=namecol>Name</TH><TH>Description</TH></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/gclr.html">GetColor(int, int)</a></TD><TD>Gets the Color of the given frame and palette index</TD></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/gfrm.html">GetFrame(int)</a></TD><TD>Gets the image for the given frame</TD></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/gfsz.html">GetFrameSize(int)</a></TD><TD>Gets the size of the given frame</TD></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/gnclr.html">GetNumberOfColors(int)</a></TD><TD>Gets the number of colors used in the given frame</TD></TR>
+	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/decf.html">DecodeFile(byte[])</a></TD><TD>Populate the Act object from the raw byte data</TD></TR>
+	<TR><TD><img src="../images/static.gif"><img src="../images/meth.gif"></TD><TD><a href="Act/deci.html">DecodeImage(byte[], int, int, Color[], int)</a></TD><TD>Gets the image from the given information</TD></TR>
+	<TR><TD><img src="../images/static.gif"><img src="../images/meth.gif"></TD><TD><a href="Act/enci.html">EncodeImage(System.Drawing.Bitmap, Color[], int)</a></TD><TD>Gets the encoded byte array</TD></TR>
 	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/save.html">Save( )</a></TD><TD>Overloaded. Writes the Act object to disk</TD></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/sclr.html">SetColor( )</a></TD><TD>Overloaded. Modifies a palette entry</TD></TR>
-	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/sfrm.html">SetFrame(int, System.Drawing.Bitmap)</a></TD><TD>Replaces indicated frame with new image</TD></TR>
+	<TR><TD><img src="../images/meth.gif"></TD><TD><a href="Act/sfrm.html">SetFrameImage(int, System.Drawing.Bitmap)</a></TD><TD>Replaces indicated frame with new image</TD></TR>
   </TABLE>
   <h3>Properties</h3>
   <TABLE>
@@ -40,20 +39,24 @@
     <TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/cent.html">Center</a></TD><TD>Gets or Sets the pixel location used to "pin" the Act object in-game</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/fname.html">FileName</a></TD><TD>Gets the file name of the Act object</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/fpath.html">FilePath</a></TD><TD>Gets the full path of the Act object</TD></TR>
-	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/loc.html">FrameLocations</a></TD><TD>Gets the array of (Left,Top) values of each frame, relative to Center</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/hgt.html">Height</a></TD><TD>Gets the overall height of the Act object</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/nfrm.html">NumberOfFrames</a></TD><TD>Gets the number of images contained within the Act object</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/sz.html">Size</a></TD><TD>Gets the overall size of the Act object</TD></TR>
 	<TR><TD><img src="../images/prop.gif"></TD><TD><a href="Act/wid.html">Width</a></TD><TD>Gets the overall width of the Act object</TD></TR>
   </TABLE>
+  <h3>Structures</h3>
+  <TABLE>
+    <TR><TH class=iconcol></TH><TH class=namecol>Name</TH><TH>Description</TH></TR>
+	<TR><TD><img src="../images/struct.gif"></TD><TD><a href="Act/frame.html">Frame</a></TD><TD>Container for the Frame information</TD></TR>
+  </TABLE>
   <hr>
   <h2>Remarks</h2>
   Acts can be loaded from file or created starting with a Bitmap. Unlike other image formats, each frame retains an individual palette.
   <hr>
-  Copyright (C) 2010 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
+  Copyright (C) 2009-2011 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
   This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.<br>
   This documentation and items contained herein are distributed under the <a href="http://www.gnu.org/licenses/fdl.html" target=_blank>GNU Free Documentation License</a>.<br>
-  Publish date: 03 Dec 2010
+  Publish date: 15 Nov 2011
   <HR>
 </BODY>
 </HTML>

@@ -1,6 +1,7 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
  * Copyright (C) 2009-2011 Michael Gaisser (mjgaisser@gmail.com)
+ * Licensed under the GPL v3.0 or later
  * 
  * Full notice in Act.cs
  */
@@ -25,4 +26,4 @@ using System.Reflection;
 //      Minor Version 
 //      Build Number
 //      Revision
-[assembly: AssemblyVersion("1.0.2.*")]
+[assembly: AssemblyVersion("2.0.*")]
