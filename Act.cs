@@ -24,6 +24,7 @@
 /* CHANGE LOG
  * 110810 - Changed license to GPL
  * 111109 - Rewritten, 2.0
+ * 111128 - Added Frames. kinda helps to provide access to the array... >.>
  */
 
 using System;
@@ -35,7 +36,7 @@ using Idmr.Common;
 namespace Idmr.ImageFormat
 {
 	/// <summary>Object to work with *.ACT image files found in TIE95, XvT and BoP</summary>
-	/// <remarks>Acts can be loaded from file or created starting with a Bitmap. Unlike other image formats, each frame retains an individual palette</remarks>
+	/// <remarks>Acts can be loaded from file or created starting with a Bitmap. Each frame retains an individual palette</remarks>
 	public class Act
 	{
 		string _filePath;
@@ -46,6 +47,7 @@ namespace Idmr.ImageFormat
 		const int _frameHeaderReserved = 0x18;
 		static string _validationErrorMessage = "Validation error, file is not a LucasArts Act Image file or is corrupted.";
 
+		#region constructors
 		/// <summary>Loads an Act image from file</summary>
 		/// <param name="file">Full path to the ACT file</param>
 		/// <exception cref="Idmr.Common.LoadFileException">Error loading <i>file</i>, check InnerException</exception>
@@ -71,7 +73,7 @@ namespace Idmr.ImageFormat
 		/// <remarks><i>FilePath</i> defaults to "NewImage.act", the palette is initialized as 256 colors and <i>image</i> is processed via SetFrameImage( ).
 		/// <i>Center</i> defaults to center of <i>image</i></remarks>
 		/// <param name="image">Image to be used as the new ACT</param>
-		/// <exception cref="Idmr.Common.BoundaryException"><i>image</i> exceed allowable size</exception>
+		/// <exception cref="Idmr.Common.BoundaryException"><i>image</i> exceeds allowable size</exception>
 		public Act(Bitmap image)
 		{
 			_frames = new Frame[1];
@@ -80,8 +82,10 @@ namespace Idmr.ImageFormat
 			Center = new Point(Width/2, Height/2);
 			_frames[0].Location = new Point(-Center.X, -Center.Y);
 		}
-
-		/// <summary>Populates the Act object form the raw byte data</summary>
+		#endregion constructors
+		
+		#region public methods
+		/// <summary>Populates the Act object from the raw byte data</summary>
 		/// <param name="raw">Entire contents of an *.ACT file</param>
 		/// <exception cref="System.ArgumentException">Data validation failure</exception>
 		public void DecodeFile(byte[] raw)
@@ -164,8 +168,8 @@ namespace Idmr.ImageFormat
 		/// <param name="image">Image to be encoded</param>
 		/// <param name="colors">Defined Color array to be used</param>
 		/// <param name="shift">Shift value to encode with</param>
-		/// <exception cref="System.ArgumentException">Image is not 8bppIndexed or invalid shift value</exception>
-		/// <remarks>image must be 8bppIndexed.  shift restricted to 3-5.</remarks>
+		/// <exception cref="System.ArgumentException"><i>image</i> is not 8bppIndexed or invalid <i>shift</i> value</exception>
+		/// <remarks><i>image</i> must be 8bppIndexed. <i>shift</i> restricted to 3-5.</remarks>
 		public static byte[] EncodeImage(Bitmap image, Color[] colors, int shift)
 		{
 			if (image.PixelFormat != PixelFormat.Format8bppIndexed) throw new ArgumentException("image must be 8bppIndexed", "image");
@@ -288,7 +292,48 @@ namespace Idmr.ImageFormat
 			Save();
 		}
 		
+		/// <summary>Replaces indicated frame with new image</summary>
+		/// <param name="index">Zero-indexed frame</param>
+		/// <param name="image">New image. If 8bppIndexed, image's palette is used, else existing is</param>
+		/// <exception cref="System.IndexOutOfRangeException">Invalid <i>index</i> value</exception>
+		/// <exception cref="Idmr.Common.BoundaryException"><i>image</i> exceeds allowable dimensions</exception>
+		public void SetFrameImage(int index, Bitmap image)
+		{
+			if (image.Width > Frame.MaximumWidth || image.Height > Frame.MaximumHeight) throw new BoundaryException("image.Size", Frame.MaximumWidth + "x" + Frame.MaximumHeight);
+			if (NumberOfFrames == 1) Size = image.Size;
+			if (image.Width > Width || image.Height > Height) throw new BoundaryException("image.Size", Width + "x" + Height);
+			
+			// initial palette prep
+			ColorPalette pal;
+			if (image.PixelFormat == PixelFormat.Format8bppIndexed) pal = image.Palette;
+			else 
+			{
+				pal = new Bitmap(1, 1, PixelFormat.Format8bppIndexed).Palette;
+				if (_frames[index]._colors != null)	// if we're updating, get the old colors
+					for (int c = 0; c < _frames[index]._colors.Length; c++)
+						pal.Entries[c] = _frames[index]._colors[c];
+			}
+			
+			if (_frames[index]._header == null)
+			{
+				// new frame, hasn't been initialized
+				_frames[index] = new Frame(image, pal.Entries);
+			}
+			else
+			{
+				if (image.PixelFormat != PixelFormat.Format8bppIndexed) image = GraphicsFunctions.ConvertTo8bpp(image, pal);
+				_frames[index].Image = image;
+			}
+		}
+		#endregion public methods
+		
 		#region public properties
+		/// <summary>The Frames contained within the Act</summary>
+		public Frame[] Frames
+		{
+			get { return _frames; }
+			set { _frames = value; }
+		}
 		/// <summary>Gets or Sets the pixel location used to "pin" the Act object in-game</summary>
 		/// <exception cref="Idmr.Common.BoundaryException">Value does not fall within Act dimensions</exception>
 		public Point Center
@@ -332,40 +377,6 @@ namespace Idmr.ImageFormat
 		public int Width { get { return BitConverter.ToInt32(_header, 0x1C) + 1; } }
 		#endregion
 
-		/// <summary>Replaces indicated frame with new image</summary>
-		/// <param name="index">Zero-indexed frame</param>
-		/// <param name="image">New image. If 8bppIndexed, image's palette is used, else existing is</param>
-		/// <exception cref="System.IndexOutOfRangeException">Invalid <i>index</i> value</exception>
-		/// <exception cref="Idmr.Common.BoundaryException"><i>image</i> exceeds allowable size</exception>
-		public void SetFrameImage(int index, Bitmap image)
-		{
-			if (image.Width > Frame.MaximumWidth || image.Height > Frame.MaximumHeight) throw new BoundaryException("image.Size", Frame.MaximumWidth + "x" + Frame.MaximumHeight);
-			if (NumberOfFrames == 1) Size = image.Size;
-			if (image.Width > Width || image.Height > Height) throw new BoundaryException("image.Size", Width + "x" + Height);
-			
-			// initial palette prep
-			ColorPalette pal;
-			if (image.PixelFormat == PixelFormat.Format8bppIndexed) pal = image.Palette;
-			else 
-			{
-				pal = new Bitmap(1, 1, PixelFormat.Format8bppIndexed).Palette;
-				if (_frames[index]._colors != null)	// if we're updating, get the old colors
-					for (int c = 0; c < _frames[index]._colors.Length; c++)
-						pal.Entries[c] = _frames[index]._colors[c];
-			}
-			
-			if (_frames[index]._header == null)
-			{
-				// new frame, hasn't been initialized
-				_frames[index] = new Frame(image, pal.Entries);
-			}
-			else
-			{
-				if (image.PixelFormat != PixelFormat.Format8bppIndexed) image = GraphicsFunctions.ConvertTo8bpp(image, pal);
-				_frames[index].Image = image;
-			}
-		}
-		
 		/// <summary>Container for the Frame information</summary>
 		public struct Frame
 		{
@@ -377,19 +388,8 @@ namespace Idmr.ImageFormat
 			internal byte[] _rows;
 			
 			internal Bitmap _image;	// Format8bppIndexed
-			internal int _shift
-			{
-				get { return BitConverter.ToInt32(_header, 0x20); }
-				set { ArrayFunctions.WriteToArray(value, _header, 0x20); }
-			}
-			int _imageDataOffset { get { return _frameHeaderLength + NumberOfColors * 3; } }
-			internal int _length { get { return _imageDataOffset + 0x10 + _rows.Length; } }
 			
-			/// <summary>Maximum width allowed within a single Frame</summary>
-			public const int MaximumWidth = 256;
-			/// <summary>Maximum height allowed within a single Frame</summary>
-			public const int MaximumHeight = 256;
-			
+			#region constructors
 			/// <summary>Populate the Frame with information from raw data</summary>
 			/// <param name="raw">Complete raw byte data of a Frame</param>
 			public Frame(byte[] raw)
@@ -432,27 +432,9 @@ namespace Idmr.ImageFormat
 				
 				_updateHeader();
 			}
+			#endregion constructors
 			
-			void _setShift()
-			{
-				int shift = 3;	// Shift=3, allows 8px lines, 00-1F ColorIndex
-				if (_image.Width <= 16) shift = 4;	// Shift=4 allows 16px lines, 00-0F ColorIndex
-				if (_colors.Length <= 8) shift = 5;	// Shift=5 allows 32px, 00-08 ColorIndex
-				else if (_colors.Length <= 16) shift = 4;
-				ArrayFunctions.WriteToArray(shift, _header, 0x20);
-			}
-			
-			void _updateHeader()
-			{
-				int imageDataOffset = _imageDataOffset;
-				ArrayFunctions.WriteToArray(imageDataOffset + _rows.Length, _header, 0);
-				ArrayFunctions.WriteToArray(imageDataOffset, _header, 8);
-				ArrayFunctions.WriteToArray(imageDataOffset + _rows.Length, _header, 0xC);
-				Width = _image.Width;
-				Height = _image.Height;
-				ArrayFunctions.WriteToArray(_colors.Length, _header, 0x28);	
-			}
-			
+			#region public methods
 			/// <summary>Modifies the given palette entry</summary>
 			/// <param name="index">Color index</param>
 			/// <param name="color">Color to be used</param>
@@ -471,7 +453,9 @@ namespace Idmr.ImageFormat
 			/// <param name="blue">B value of color to be used</param>
 			/// <exception cref="System.IndexOutOfRangeException">Invalid <i>index</i> value</exception>
 			public void SetColor(int index, byte red, byte green, byte blue) { SetColor(index, Color.FromArgb(red, green, blue)); }
+			#endregion public methods
 			
+			#region public properties
 			/// <summary>Gets a copy of the used color array</summary>
 			public Color[] Colors { get { return (Color[])_colors.Clone(); } }
 			
@@ -503,6 +487,12 @@ namespace Idmr.ImageFormat
 				set { _location = value; }	// TODO: Location validation
 			}
 			
+			/// <summary>Maximum height allowed within a single Frame</summary>
+			public const int MaximumHeight = 256;
+			
+			/// <summary>Maximum width allowed within a single Frame</summary>
+			public const int MaximumWidth = 256;
+			
 			/// <summary>Gets the number of colors defined by the Frame</summary>
 			public int NumberOfColors { get { return BitConverter.ToInt32(_header, 0x28); } }
 			
@@ -512,6 +502,39 @@ namespace Idmr.ImageFormat
 				get { return BitConverter.ToInt32(_header, 0x10); }
 				internal set { ArrayFunctions.WriteToArray(value, _header, 0x10); }
 			}
+			#endregion public properties
+			
+			#region private methods
+			void _setShift()
+			{
+				int shift = 3;	// Shift=3, allows 8px lines, 00-1F ColorIndex
+				if (_image.Width <= 16) shift = 4;	// Shift=4 allows 16px lines, 00-0F ColorIndex
+				if (_colors.Length <= 8) shift = 5;	// Shift=5 allows 32px, 00-08 ColorIndex
+				else if (_colors.Length <= 16) shift = 4;
+				ArrayFunctions.WriteToArray(shift, _header, 0x20);
+			}
+			
+			void _updateHeader()
+			{
+				int imageDataOffset = _imageDataOffset;
+				ArrayFunctions.WriteToArray(imageDataOffset + _rows.Length, _header, 0);
+				ArrayFunctions.WriteToArray(imageDataOffset, _header, 8);
+				ArrayFunctions.WriteToArray(imageDataOffset + _rows.Length, _header, 0xC);
+				Width = _image.Width;
+				Height = _image.Height;
+				ArrayFunctions.WriteToArray(_colors.Length, _header, 0x28);	
+			}
+			#endregion private methods
+			
+			#region private properties
+			internal int _shift
+			{
+				get { return BitConverter.ToInt32(_header, 0x20); }
+				set { ArrayFunctions.WriteToArray(value, _header, 0x20); }
+			}
+			int _imageDataOffset { get { return _frameHeaderLength + NumberOfColors * 3; } }
+			internal int _length { get { return _imageDataOffset + 0x10 + _rows.Length; } }
+			#endregion private properties
 		}
 	}
 }

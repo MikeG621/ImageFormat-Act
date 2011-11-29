@@ -1,0 +1,179 @@
+<HTML>
+<HEAD>
+<TITLE>Act Class (Idmr.ImageFormat)</TITLE>
+<style type="text/css">a{color:#ccc} body{color:#666; background-color:#000} span{color:#088} h2,h3,h4{color:#aaa}</style>
+</HEAD>
+
+<BODY>
+<h1>Act Class</h1>
+
+<B>Namespace:</B> Idmr.ImageFormat<BR>
+<B>Assembly:</B> Idmr.ImageFormat.Act.dll<BR>
+<B>Additional References:</B><BR>
+&nbsp;&nbsp;&nbsp;System.Drawing<br>
+&nbsp;&nbsp;&nbsp;Idmr.Common<br>
+<B>Version:</B> 2.0<BR>
+<hr>
+
+<div>
+<h2>Act Class</h2>
+<img src="images/class.gif"> <span><b>public</b> class</span> Act<br>
+<u>Object to work with *.ACT image files found in TIE95, XvT and BoP</u>. Acts can be loaded from file or created starting with a Bitmap. Each frame retains an individual palette.
+
+<h3>Constructors</h3>
+
+<p><img src="images/meth.gif"> <span><b>public</b></span> Act(<span>string</span> file)<br>
+<u>Loads an Act image from file</u><br>
+<i>file</i> - Full path to the ACT file<br>
+<b>Exceptions</b><br>
+<i>Idmr.Common.LoadFileException</i> - Error loading <i>file</i>, check InnerException</p>
+
+<p><img src="images/meth.gif"> <span><b>public</b></span> Act(System.Drawing.<span>Bitmap</span> image)<br>
+<u>Creates a new Act image from bitmap</u>. <i>FilePath</i> defaults to "NewImage.act", the palette is initialized as 256 colors and <i>image</i> is processed via SetFrameImage( ). <i>Center</i> defaults to center of <i>image</i><br>
+<i>image</i> - Image to be used as the new ACT<br>
+<b>Exceptions</b><br>
+<i>Idmr.Common.BoundaryException</i> - <i>image</i> exceeds allowable size</p>
+
+<h3>Methods</h3>
+
+<p><img src="images/meth.gif"> <span><b>public</b> void</span> DecodeFile(<span>byte</span>[] raw)<br>
+<u>Populates the Act object from the raw byte data</u><br>
+<i>raw</i> - Entire contents of an *.ACT file<br>
+<b>Exceptions</b><br>
+<i>System.ArgumentException</i> - Data validation failure</p>
+
+<p><img src="images/static.gif"><img src="images/meth.gif"> <span><b>public</b> static</span> System.Drawing.<span>Bitmap</span> DecodeImage(<span>byte</span>[] raw, <span>int</span> width, <span>int</span> height, System.Drawing.<span>Color</span>[] colors, <span>int</span> shift)<br>
+<u>Gets the image from the given information</u><br>
+<i>raw</i> - The encoded Rows data<br>
+<i>width</i> - Width of the Frame<br>
+<i>height</i> - Height of the Frame<br>
+<i>colors</i> - Defined Color array to be used<br>
+<i>shift</i> - Shift value to decode with<br>
+<b>Exceptions</b><br>
+<i>System.ArgumentException</i> - Data validation failure</p>
+
+<p><img src="images/static.gif"><img src="images/meth.gif"> <span><b>public</b> static byte</span>[] EncodeImage(System.Drawing.<span>Bitmap</span> image, System.Drawing.<span>Color</span>[] colors, <span>int</span> shift)<br>
+<u>Gets the encoded byte array</u>. <i>image</i> must be 8bppIndexed. <i>shift</i> restricted to 3-5.<br>
+<i>image</i> - Image to be encoded<br>
+<i>colors</i> - Defined Color array to be used<br>
+<i>shift</i> - Shift value to encode with<br>
+<b>Exceptions</b><br>
+<i>System.ArgumentException</i> - <i>image</i> is not 8bppIndexed or invalid <i>shift</i> value</p>
+
+<p><img src="images/meth.gif"> <span><b>public</b> void</span> Save( )<br>
+<u>Writes the Act object to its original location</u><br>
+<b>Exceptions</b><br>
+<i>Idmr.Common.SaveFileException</i> - Error saving file, check InnerException. Original unchanged if applicable</p>
+
+<p><img src="images/meth.gif"> <span><b>public</b> void</span> Save(<span>string</span> file)<br>
+<u>Writes the Act object to a new location</u><br>
+<i>file</i> - Full path to the new ACT file<br>
+<b>Exceptions</b><br>
+<i>Idmr.Common.SaveFileException</i> - Error saving file, check InnerException. Original unchanged if applicable</p>
+
+<p><img src="images/meth.gif"> <span><b>public</b> void</span> SetFrameImage(<span>int</span> index, System.Drawing.<span>Bitmap</span> image)<br>
+<u>Replaces indicated frame with new image</u><br>
+<i>index</i> - Zero-indexed frame<br>
+<i>image</i> - New image. If 8bppIndexed, image's palette is used, else existing is<br>
+<b>Exceptions</b><br>
+<i>System.IndexOutOfRangeException</i> - Invalid <i>index</i> value<br>
+<i>Idmr.Common.BoundaryException</i> - <i>image</i> exceeds allowable dimensions</p>
+
+<h3>Properties</h3>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> Center<br>
+<u>Gets or Sets the pixel location used to "pin" the Act object in-game</u><br>
+<b>Exceptions</b>
+<i>Idmr.Common.BoundaryException</i> - Value does not fall within Act dimensions</p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> FileName<br>
+<u>Gets the file name of the Act object</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> FilePath<br>
+<u>Gets the full path of the Act object</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> Frames<br>
+<u>The Frames contained within the Act</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> Height<br>
+<u>Gets the overall height of the Act object</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> NumberOfFrames<br>
+<u>Gets the number of images contained within the Act object</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> Size<br>
+<u>Gets the overall size of the Act object</u></p>
+
+<p><img src="images/prop.gif"> <span><b>public</b> string</span> Width<br>
+<u>Gets the overall width of the Act object</u></p>
+
+<h3>Structures</h3>
+
+<p><img src="images/struct.gif"> <span><b>public</b> struct</span> Frame<br>
+<u>Container for the Frame information</u><br>
+<div style="margin-left: 25px">
+  <h3>Constructors</h3>
+
+  <p><img src="images/meth.gif"> <span><b>public</b></span> Frame(<span>byte</span>[] raw)<br>
+  <u>Populate the Frame with information from raw data</u><br>
+  <i>raw</i> - Complete raw byte data of a Frame</p>
+
+  <p><img src="images/meth.gif"> <span><b>public</b></span> Frame(System.Drawing.<span>Bitmap</span> image, System.Drawing.<span>Color</span>[] colors)<br>
+  <u>Create a new Frame with the given image and color array</u><br>
+  <i>image</i> - Image to be used for the Frame, will use <i>colors</i> as the palette<br>
+  <i>colors</i> - Colors to be used for the Frame</p>
+  
+  <h3>Methods</h3>
+  
+  <p><img src="images/meth.gif"> <span><b>public</b> void</span> SetColor(<span>int</span> index, System.Drawing.<span>Color</span> color)<br>
+  <u>Modifies the given palette entry</u><br>
+  <i>index</i> - Color index<br>
+  <i>color</i> - Color to be used<br>
+  <b>Exceptions</b><br>
+  <i>System.IndexOutOfRangeException</i> - Invalid <i>index</i> value</p>
+  
+  <p><img src="images/meth.gif"> <span><b>public</b> void</span> SetColor(<span>int</span> index, <span>byte</span> red, <span>byte</span> green, <span>byte</span> blue)<br>
+  <u>Modifies the given palette entry</u><br>
+  <i>index</i> - Color index<br>
+  <i>red</i> - R value of color to be used<br>
+  <i>green</i> - G value of color to be used<br>
+  <i>blue</i> - B value of color to be used<br>
+  <b>Exceptions</b><br>
+  <i>System.IndexOutOfRangeException</i> - Invalid <i>index</i> value</p>
+
+  <h3>Properties</h3>
+
+  <p><img src="images/prop.gif"> <span><b>public</b></span> System.Drawing.<span>Color</span>[] Colors<br>
+  <u>Gets a copy of the used color array</u></p>
+
+  <p><img src="images/prop.gif"> <span><b>public</b> int</span> Height<br>
+  <u>Gets the height of the Frame</u></p>
+
+  <p><img src="images/prop.gif"> <span><b>public</b></span> System.Drawing.<span>Bitmap</span> Image<br>
+  <u>Gets the frame image</u></p>
+  
+  <p><img src="images/prop.gif"> <span><b>public</b></span> System.Drawing.<span>Point</span> Location<br>
+  <u>Gets or sets the frame origin position relative to Act.Center</u></p>
+  
+  <p><img src="images/const.gif"> <span><b>public</b> const int</span> MaximumHeight<br>
+  <u>Maximum height allowed within a single Frame</u></p>
+  
+  <p><img src="images/const.gif"> <span><b>public</b> const int</span> MaximumWidth<br>
+  <u>Maximum width allowed within a single Frame</u></p>
+  
+  <p><img src="images/prop.gif"> <span><b>public</b> int</span> NumberOfColors<br>
+  <u>Gets the number of colors defined by the Frame</u></p>
+  
+  <p><img src="images/prop.gif"> <span><b>public</b> int</span> Width<br>
+  <u>Gets the width of the Frame</u></p>
+</div></p>
+</div>
+<hr>
+
+Copyright (C) 2009-2011 Michael Gaisser (mjgaisser@gmail.com)<BR><BR>
+This library is free software, distributed under the <a href="http://www.gnu.org/licenses/gpl.html" target=_blank>GNU General Public License</a>.<br>
+This documentation and items contained herein are distributed under the <a href="http://www.gnu.org/licenses/fdl.html" target=_blank>GNU Free Documentation License</a>.<br>
+Publish date: 28 Nov 2011
+<HR>
+</BODY>
+</HTML>
