@@ -1,16 +1,17 @@
 Idmr.ImageFormat.Act.dll
 
 Library for editing LucasArts *.ACT backdrop files
+v2.0, 02 Jan 2012
 
-Copyright (C) Michael Gaisser, 2009-2011
+Copyright (C) Michael Gaisser, 2009-2012
 
 Instructions:
 -Add Act.cs to your project
 -Add System.Drawing and Idmr.Common to your references
 
-Detailed information on the members can be found in 'help file/pages/Idmr.ImageFormat.Act.html'
-
 File format structure can be found in ACT_Image_File.txt
+
+Programmer's reference can be found in help/Idmr.ImageFormat.Act.html
 
 Code is licensed under the GNU General Pulic License (GPL) v3.0 or later
 Documentation licensed under the GNU Free Documentation License v1.3 or later
