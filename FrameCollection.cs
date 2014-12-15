@@ -1,15 +1,18 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
- * Copyright (C) 2009-2012 Michael Gaisser (mjgaisser@gmail.com)
- * Licensed under the GPL v3.0 or later
+ * Copyright (C) 2009-2014 Michael Gaisser (mjgaisser@gmail.com)
+ * Licensed under the MPL v2.0 or later
  * 
- * Full notice in Act.cs
- * VERSION: 2.0
+ * Full notice in ActImage.cs
+ * VERSION: 2.1
  */
 
 /* CHANGE LOG
+ * v2.1, 141214
+ * [NEW] SetCount
+ * [UPD] switch to MPL
  * v2.0, 121024
- * - Release
+ * Release
  */
 
 using System;
@@ -46,6 +49,55 @@ namespace Idmr.ImageFormat.Act
 			_parent._recalculateSize();
 			return success;
 		}
+
+		/// <summary>Adds the given item to the end of the Collection</summary>
+		/// <param name="item">The item to be added</param>
+		/// <returns>The index of the added item if successful, otherwise <b>-1</b></returns>
+		new public int Add(Frame item)
+		{
+			int index = _add(item);
+			if (index != -1)
+			{
+				_items[index]._parent = _parent;
+				_parent._recalculateSize();
+			}
+			return index;
+		}
+
+		/// <summary>Inserts the given item at the specified index</summary>
+		/// <param name="index">Location of the item</param>
+		/// <param name="item">The item to be added</param>
+		/// <returns>The index of the added item if successful, otherwise <b>-1</b></returns>
+		new public int Insert(int index, Frame item)
+		{
+			index = _insert(index, item);
+			if (index != -1)
+			{
+				_items[index]._parent = _parent;
+				_parent._recalculateSize();
+			}
+			return index;
+		}
+
+		/// <summary>Expands or contracts the Collection, populating as necessary</summary>
+		/// <param name="value">The new size of the Collection. Must be greater than <b>0</b>.</param>
+		/// <param name="allowTruncate">Controls if the Collection is allowed to get smaller</param>
+		/// <exception cref="InvalidOperationException"><i>value</i> is smaller than <see cref="Count"/> and <i>allowTruncate</i> is <b>false</b>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><i>value</i> must be greater than 0.</exception>
+		/// <remarks>If the Collection expands, the new items will be a blank <see cref="Frame"/>. When truncating, items will be removed starting from the last index.</remarks>
+		public override void SetCount(int value, bool allowTruncate)
+		{
+			if (value == Count) return;
+			else if (value < 1) throw new ArgumentOutOfRangeException("value", "value must be greater than 0");
+			else if (value < Count)
+			{
+				if (!allowTruncate) throw new InvalidOperationException("Reducing 'value' will cause data loss");
+				else while (Count > value) _removeAt(Count - 1);
+			}
+			else while (Count < value) Add(new Frame(_parent));
+			_parent._recalculateSize();
+			if (!_isLoading) _isModified = true;
+		}
 		#endregion public methods
 		
 		#region public properties
@@ -65,35 +117,6 @@ namespace Idmr.ImageFormat.Act
 					_parent._recalculateSize();
 				}
 			}
-		}
-		
-		/// <summary>Adds the given item to the end of the Collection</summary>
-		/// <param name="item">The item to be added</param>
-		/// <returns>The index of the added item if successful, otherwise <b>-1</b></returns>
-		new public int Add(Frame item)
-		{
-			int index = _add(item);
-			if (index != -1)
-			{
-				_items[index]._parent = _parent;
-				_parent._recalculateSize();
-			}
-			return index;
-		}
-		
-		/// <summary>Inserts the given item at the specified index</summary>
-		/// <param name="index">Location of the item</param>
-		/// <param name="item">The item to be added</param>
-		/// <returns>The index of the added item if successful, otherwise <b>-1</b></returns>
-		new public int Insert(int index, Frame item)
-		{
-			index = _insert(index, item);
-			if (index != -1)
-			{
-				_items[index]._parent = _parent;
-				_parent._recalculateSize();
-			}
-			return index;
 		}
 		#endregion public properties
 	}
