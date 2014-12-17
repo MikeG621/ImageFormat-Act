@@ -6,11 +6,11 @@
  * under the terms of the Mozilla Public License; either version 2.0 of the
  * License, or (at your option) any later version.
  *
- * This library "as is" without warranty of any kind; including that the
- * library is free of defets, merchantable, fit for a particular purpose or
+ * This library is "as is" without warranty of any kind; including that the
+ * library is free of defects, merchantable, fit for a particular purpose or
  * non-infringing. See the full license text for more details.
  *
- * If a copy of the MPL (License.txt) was not distributed with this file,
+ * If a copy of the MPL (MPL.txt) was not distributed with this file,
  * you can obtain one at http://mozilla.org/MPL/2.0/.
  * 
  * VERSION: 2.1
