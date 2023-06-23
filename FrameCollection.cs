@@ -1,13 +1,14 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
- * Copyright (C) 2009-2014 Michael Gaisser (mjgaisser@gmail.com)
+ * Copyright (C) 2009-2023 Michael Gaisser (mjgaisser@gmail.com)
  * Licensed under the MPL v2.0 or later
  * 
  * Full notice in ActImage.cs
- * VERSION: 2.1
+ * VERSION: 2.1+
  */
 
 /* CHANGE LOG
+ * [UPD] formatting, no functional change
  * v2.1, 141214
  * [NEW] SetCount
  * [UPD] switch to MPL
@@ -21,9 +22,9 @@ using Idmr.Common;
 
 namespace Idmr.ImageFormat.Act
 {
-	/// <summary>Object to maintain Act image <see cref="Act.Frame">Frames</see></summary>
-	/// <remarks><see cref="ResizableCollection{T}.ItemLimit"/> is set to <b>20</b></remarks>
-	public class FrameCollection : ResizableCollection<Frame>
+    /// <summary>Object to maintain Act image <see cref="Frame">Frames</see></summary>
+    /// <remarks><see cref="ResizableCollection{T}.ItemLimit"/> is set to <b>20</b></remarks>
+    public class FrameCollection : ResizableCollection<Frame>
 	{
 		internal ActImage _parent;
 		
@@ -40,13 +41,13 @@ namespace Idmr.ImageFormat.Act
 		#region public methods
 		/// <summary>Deletes the specified item from the Collection</summary>
 		/// <param name="index">Item index</param>
-		/// <returns><b>true</b> if successful, <b>false</b> for invalid <i>index</i> value</returns>
+		/// <returns><b>true</b> if successful, <b>false</b> for invalid <paramref name="index"/> value</returns>
 		/// <remarks>Cannot remove the lone <see cref="Frame"/> in a single=<see cref="Frame"/> collection.</remarks>
 		public bool Remove(int index)
 		{
 			if (Count == 1) return false;
 			bool success = (_removeAt(index) != -1);
-			_parent._recalculateSize();
+			_parent.recalculateSize();
 			return success;
 		}
 
@@ -59,7 +60,7 @@ namespace Idmr.ImageFormat.Act
 			if (index != -1)
 			{
 				_items[index]._parent = _parent;
-				_parent._recalculateSize();
+				_parent.recalculateSize();
 			}
 			return index;
 		}
@@ -74,7 +75,7 @@ namespace Idmr.ImageFormat.Act
 			if (index != -1)
 			{
 				_items[index]._parent = _parent;
-				_parent._recalculateSize();
+				_parent.recalculateSize();
 			}
 			return index;
 		}
@@ -82,8 +83,8 @@ namespace Idmr.ImageFormat.Act
 		/// <summary>Expands or contracts the Collection, populating as necessary</summary>
 		/// <param name="value">The new size of the Collection. Must be greater than <b>0</b>.</param>
 		/// <param name="allowTruncate">Controls if the Collection is allowed to get smaller</param>
-		/// <exception cref="InvalidOperationException"><i>value</i> is smaller than <see cref="FixedSizeCollection{T}.Count"/> and <i>allowTruncate</i> is <b>false</b>.</exception>
-		/// <exception cref="ArgumentOutOfRangeException"><i>value</i> must be greater than 0.</exception>
+		/// <exception cref="InvalidOperationException"><paramref name="value"/> is smaller than <see cref="FixedSizeCollection{T}.Count"/> and <paramref name="allowTruncate"/> is <b>false</b>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> must be greater than 0.</exception>
 		/// <remarks>If the Collection expands, the new items will be a blank <see cref="Frame"/>. When truncating, items will be removed starting from the last index.</remarks>
 		public override void SetCount(int value, bool allowTruncate)
 		{
@@ -95,7 +96,7 @@ namespace Idmr.ImageFormat.Act
 				else while (Count > value) _removeAt(Count - 1);
 			}
 			else while (Count < value) Add(new Frame(_parent));
-			_parent._recalculateSize();
+			_parent.recalculateSize();
 			if (!_isLoading) _isModified = true;
 		}
 		#endregion public methods
@@ -103,21 +104,21 @@ namespace Idmr.ImageFormat.Act
 		#region public properties
 		/// <summary>Gets or sets a single item within the Collection</summary>
 		/// <param name="index">The item location within the collection</param>
-		/// <returns>A single item within the collection<br/>-or-<br/><b>null</b> for invalid values of <i>index</i></returns>
-		/// <remarks>No action is taken when attempting to set with invalid values of <i>index</i>.</remarks>
+		/// <returns>A single item within the collection<br/>-or-<br/><b>null</b> for invalid values of <paramref name="index"/></returns>
+		/// <remarks>No action is taken when attempting to set with invalid values of <paramref name="index"/>.</remarks>
 		new public Frame this[int index]
-		{
-			get { return _getItem(index); }
-			set
-			{
-				_setItem(index, value);
-				if (index >= 0 && index < Count)
-				{
-					_items[index]._parent = _parent;
-					_parent._recalculateSize();
-				}
-			}
-		}
-		#endregion public properties
-	}
+        {
+            get => _getItem(index);
+            set
+            {
+                _setItem(index, value);
+                if (index >= 0 && index < Count)
+                {
+                    _items[index]._parent = _parent;
+                    _parent.recalculateSize();
+                }
+            }
+        }
+        #endregion public properties
+    }
 }

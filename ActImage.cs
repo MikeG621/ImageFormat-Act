@@ -1,6 +1,6 @@
 ﻿/*
  * Idmr.ImageFormat.Act, Allows editing capability of LucasArts *.ACT files.
- * Copyright (C) 2009-2014 Michael Gaisser (mjgaisser@gmail.com)
+ * Copyright (C) 2009-2023 Michael Gaisser (mjgaisser@gmail.com)
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the Mozilla Public License; either version 2.0 of the
@@ -13,10 +13,12 @@
  * If a copy of the MPL (MPL.txt) was not distributed with this file,
  * you can obtain one at http://mozilla.org/MPL/2.0/.
  * 
- * VERSION: 2.1
+ * VERSION: 2.1+
  */
 
 /* CHANGE LOG
+ * [NEW] Global colors read support
+ * [UPD] Proper use of jumps instead of fixed header lengths
  * v2.1, 141214
  * [UPD] switch to MPL
  * v2.0, 121024
@@ -38,17 +40,19 @@ namespace Idmr.ImageFormat.Act
 	{
 		string _filePath;
 		FrameCollection _frames;
-		byte[] _header = new byte[_fileHeaderLength];
+        readonly byte[] _header = new byte[_fileHeaderLength];
 		Point _center;
 		const int _fileHeaderLength = 0x34;
 		internal static string _validationErrorMessage = "Validation error, data is not a LucasArts Act Image or is corrupted.";
-		static string _extension = ".ACT";
+		static readonly string _extension = ".ACT";
+		Color[] _colors;
+        bool _useGlobalColors;
 
-		#region constructors
-		/// <summary>Loads an Act image from file</summary>
-		/// <param name="file">Full path to the ACT file</param>
-		/// <exception cref="Idmr.Common.LoadFileException">Error loading <i>file</i></exception>
-		public ActImage(string file)
+        #region constructors
+        /// <summary>Loads an Act image from file</summary>
+        /// <param name="file">Full path to the ACT file</param>
+        /// <exception cref="LoadFileException">Error loading <i>file</i></exception>
+        public ActImage(string file)
 		{
 			FileStream fs = null;
 			try
@@ -60,7 +64,7 @@ namespace Idmr.ImageFormat.Act
 			}
 			catch (Exception x)
 			{
-				if (fs != null) fs.Close();
+				fs?.Close();
 				System.Diagnostics.Debug.WriteLine(x.StackTrace);
 				throw new LoadFileException(x);
 			}
@@ -81,16 +85,18 @@ namespace Idmr.ImageFormat.Act
 			_filePath = "LFD";
 		}
 
-		/// <summary>Creates a new Act image from bitmap</summary>
-		/// <remarks><see cref="FilePath"/> defaults to <b>"NewImage.act"</b>, <see cref="Frames"/> is initialized as a single <see cref="Frame"/> using <i>image</i>.<br/>
-		/// <see cref="Center"/> defaults to the center pixel of <i>image</i>.</remarks>
-		/// <param name="image">Initial <see cref="PixelFormat.Format8bppIndexed"/> image to be used</param>
-		/// <exception cref="Idmr.Common.BoundaryException"><i>image</i> exceeds allowable size</exception>
-		public ActImage(Bitmap image)
+        /// <summary>Creates a new Act image from bitmap</summary>
+        /// <remarks><see cref="FilePath"/> defaults to <b>"NewImage.act"</b>, <see cref="Frames"/> is initialized as a single <see cref="Frame"/> using <paramref name="image"/>.<br/>
+        /// <see cref="Center"/> defaults to the center pixel of <paramref name="image"/>.</remarks>
+        /// <param name="image">Initial <see cref="PixelFormat.Format8bppIndexed"/> image to be used</param>
+        /// <exception cref="BoundaryException"><paramref name="image"/> exceeds allowable size.</exception>
+        public ActImage(Bitmap image)
 		{
-			_frames = new FrameCollection(this);
-			_frames.Add(new Frame(this, image));
-			_filePath = "NewImage.act";
+            _frames = new FrameCollection(this)
+            {
+                new Frame(this, image)
+            };
+            _filePath = "NewImage.act";
 			_center = new Point(Width/2, Height/2);
 			_frames[0].Location = new Point(-Center.X, -Center.Y);
 		}
@@ -103,18 +109,29 @@ namespace Idmr.ImageFormat.Act
 		public void DecodeFile(byte[] raw)
 		{
 			ArrayFunctions.TrimArray(raw, 0, _header);
-			if (BitConverter.ToInt32(_header, 0x10) != _fileHeaderLength) throw new ArgumentException(_validationErrorMessage, "raw");
+			var offsetsJump = BitConverter.ToInt32(_header, 0x10);	// usually same as_fileHeaderLength, but could technically be different
 			_center = new Point(BitConverter.ToInt32(_header, 0x24), BitConverter.ToInt32(_header, 0x28));
-			int numFrames = BitConverter.ToInt32(_header, 0x18);
+			// Global colors, not likely to be used
+			_useGlobalColors = _header[0x2c] == 0x18;
+			if (_useGlobalColors)
+			{
+				_colors = new Color[BitConverter.ToInt32(_header, 0x30)];
+				var colorsJump = BitConverter.ToInt32(_header, 0xc);
+                System.Diagnostics.Debug.WriteLine("Global Colors: " + NumberOfColors);
+                for (int c = 0, pos = colorsJump; c < _colors.Length; c++, pos += 4)
+                    _colors[c] = Color.FromArgb(raw[pos], raw[pos + 1], raw[pos + 2]);  // Red, Green, Blue, Alpha unused
+            }
+            // Frames
+            int numFrames = BitConverter.ToInt32(_header, 0x18);
 			int[] frameOffsets = new int[numFrames];
 			System.Diagnostics.Debug.WriteLine("Frames: " + numFrames);
-			ArrayFunctions.TrimArray(raw, _fileHeaderLength, frameOffsets);
+			ArrayFunctions.TrimArray(raw, offsetsJump, frameOffsets);
 			_frames = new FrameCollection(this);
-			// Frames
+			byte[] rawFrame;
 			for (int f = 0; f < numFrames; f++)
 			{
 				// FrameHeader
-				byte[] rawFrame = new byte[BitConverter.ToInt32(raw, frameOffsets[f])];
+				rawFrame = new byte[BitConverter.ToInt32(raw, frameOffsets[f])];
 				ArrayFunctions.TrimArray(raw, frameOffsets[f], rawFrame);
 				_frames.Add(new Frame(this, rawFrame));
 			}
@@ -157,7 +174,8 @@ namespace Idmr.ImageFormat.Act
 					else if (b == 0xFB) // Shift code
 					{
 						indexShift = raw[offset++];
-						numShift = raw[offset++];	// TODO: check LA files to make sure this is always 1
+						numShift = raw[offset++];   // this appears to always be zero
+						if (numShift != 0) System.Diagnostics.Debug.WriteLine("Non-zero Shift count: index: " + indexShift + ", num: " + numShift);
 					}
 					else	// Short code
 					{
@@ -179,15 +197,15 @@ namespace Idmr.ImageFormat.Act
 			image.Palette = pal;
 			return image;
 		}
-		
-		/// <summary>Gets the encoded byte array</summary>
-		/// <param name="image">Image to be encoded</param>
-		/// <param name="colors">Defined Color array to be used</param>
-		/// <param name="shift">Shift value to encode with</param>
-		/// <exception cref="ArgumentException"><i>image</i> is not 8bppIndexed<br/><b>-or-</b><br/>Invalid <i>shift</i> value</exception>
-		/// <remarks><i>image</i> must be 8bppIndexed. <i>shift</i> restricted to 3-5.</remarks>
-		/// <returns>Encoded byte array of the image ready to be written to disk</returns>
-		public static byte[] EncodeImage(Bitmap image, Color[] colors, int shift)
+
+        /// <summary>Gets the encoded byte array</summary>
+        /// <param name="image">Image to be encoded.</param>
+        /// <param name="colors">Defined Color array to be used.</param>
+        /// <param name="shift">Shift value to encode with.</param>
+        /// <exception cref="ArgumentException"><paramref name="image"/> is not 8bppIndexed<br/><b>-or-</b><br/>Invalid <paramref name="shift"/> value.</exception>
+        /// <remarks><paramref name="image"/> must be 8bppIndexed. <paramref name="shift"/> restricted to 3-5.</remarks>
+        /// <returns>Encoded byte array of the image ready to be written to disk</returns>
+        public static byte[] EncodeImage(Bitmap image, Color[] colors, int shift)
 		{
 			if (image.PixelFormat != PixelFormat.Format8bppIndexed) throw new ArgumentException("image must be 8bppIndexed", "image");
 			if (shift < 3 || shift > 5) throw new ArgumentException("shift value must be 3-5", "shift");
@@ -240,17 +258,19 @@ namespace Idmr.ImageFormat.Act
 			byte[] trimmedRaw = new byte[offset];
 			ArrayFunctions.TrimArray(raw, 0, trimmedRaw);
 			return trimmedRaw;
+			//TODO: also need to trim colors
 		}
-		
-		/// <summary>Writes the Act object to its original location</summary>
-		/// <exception cref="Idmr.Common.SaveFileException">Error saving file. Original unchanged if applicable</exception>
-		/// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
-		public void Save()
+
+        /// <summary>Writes the Act object to its original location</summary>
+        /// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
+        /// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
+        public void Save()
 		{
 			if (!_filePath.ToUpper().EndsWith(_extension))
 				throw new InvalidOperationException("Must define temporary location for LFD XACT resources");
 			FileStream fs = null;
 			string tempFile = _filePath + ".tmp";
+			//TODO: convert Global Colors to frame colors
 			try
 			{
 				if (File.Exists(_filePath)) File.Copy(_filePath, tempFile);	// create backup
@@ -291,6 +311,7 @@ namespace Idmr.ImageFormat.Act
 						fs.WriteByte(_frames[f]._colors[c].B);
 						fs.Position++;
 					}
+					//BUG: missing the frame extents
 					bw.Write(_frames[f]._rows);
 				}
 				fs.SetLength(length);
@@ -299,7 +320,7 @@ namespace Idmr.ImageFormat.Act
 			}
 			catch (Exception x)
 			{
-				if (fs != null) fs.Close();
+				fs?.Close();
 				if (File.Exists(tempFile)) File.Copy(tempFile, _filePath);	// restore backup if it exists
 				File.Delete(tempFile);	// delete backup if it exists
 				System.Diagnostics.Debug.WriteLine(x.StackTrace);
@@ -307,11 +328,11 @@ namespace Idmr.ImageFormat.Act
 			}
 		}
 
-		/// <summary>Writes the Act object to a new location</summary>
-		/// <param name="file">Full path to the new file location</param>
-		/// <exception cref="ArgumentException">Invalid file extension</exception>
-		/// <exception cref="Idmr.Common.SaveFileException">Error saving file. Original unchanged if applicable</exception>
-		public void Save(string file)
+        /// <summary>Writes the Act object to a new location</summary>
+        /// <param name="file">Full path to the new file location</param>
+        /// <exception cref="ArgumentException">Invalid file extension</exception>
+        /// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
+        public void Save(string file)
 		{
 			if (!file.ToUpper().EndsWith(_extension))
 				throw new ArgumentException("New file extension must be \"" + _extension + "\". XACT objects from LFD resources must be saved as a separate " + _extension + ", temporary or otherwise. The LfdFile object will handle LFD resource saving as necessary.", "file");
@@ -323,67 +344,92 @@ namespace Idmr.ImageFormat.Act
 		#region public properties
 		/// <summary>Gets or sets the collection of <see cref="Frames">Frames</see> contained within the Act</summary>
 		public FrameCollection Frames
-		{
-			get { return _frames; }
+        {
+            get => _frames;
+            set
+            {
+                _frames = value;
+                _frames._parent = this;
+                for (int f = 0; f < _frames.Count; f++) _frames[f]._parent = this;
+                recalculateSize();
+            }
+        }
+        /// <summary>Gets or sets the pixel location used to "pin" the object in-game</summary>
+        /// <exception cref="BoundaryException"><i>value</i> does not fall within <see cref="Size"/></exception>
+        /// <remarks><see cref="Frame.Location"/> values will update as necessary</remarks>
+        public Point Center
+        {
+            get => _center;
+            set
+            {
+                if (value.X < Width && value.X >= 0 && value.Y < Height && value.Y >= 0)
+                {
+                    int offX = _center.X - value.X;
+                    int offY = _center.Y - value.Y;
+                    for (int f = 0; f < NumberOfFrames; f++)
+                    {
+                        _frames[f].X += offX;
+                        _frames[f].Y += offY;
+                    }
+                    _center = value;
+                }
+                else throw new BoundaryException("value", "0,0 - " + Width + "," + Height);
+            }
+        }
+
+        /// <summary>Gets the file name of the Act object</summary>
+        public string FileName => StringFunctions.GetFileName(_filePath);
+
+        /// <summary>Gets the full path of the Act object</summary>
+        public string FilePath => _filePath;
+
+        /// <summary>Gets the overall height of the Act object</summary>
+        public int Height => BitConverter.ToInt32(_header, 0x20) + 1;
+
+        /// <summary>Gets the number of images contained within the Act object</summary>
+        public int NumberOfFrames => _frames.Count;
+
+        /// <summary>Gets the overall size of the Act object</summary>
+        public Size Size
+        {
+            get => new Size(Width, Height);
+            internal set
+            {
+                ArrayFunctions.WriteToArray(value.Width - 1, _header, 0x1C);
+                ArrayFunctions.WriteToArray(value.Height - 1, _header, 0x20);
+            }
+        }
+
+        /// <summary>Gets the overall width of the Act object</summary>
+        public int Width => BitConverter.ToInt32(_header, 0x1C) + 1;
+
+        /// <summary>Gets a copy of the global color array.</summary>
+        /// <exception cref="NullReferenceException">Global colors are not used.</exception>
+        public Color[] GlobalColors => (Color[])_colors.Clone();
+
+        /// <summary>Gets or sets if the global color array is used.</summary>
+        /// <remarks>If setting to <b>true</b>, initializes a 256 color array.</remarks>
+        public bool UseGlobalColors {
+			get => _useGlobalColors;
 			set
 			{
-				_frames = value;
-				_frames._parent = this;
-				for (int f = 0; f < _frames.Count; f++) _frames[f]._parent = this;
-				_recalculateSize();
+				if (value) _colors = new Color[256];
+				else _colors = null;
+				_useGlobalColors = value;
 			}
 		}
-		/// <summary>Gets or sets the pixel location used to "pin" the object in-game</summary>
-		/// <exception cref="Idmr.Common.BoundaryException"><i>value</i> does not fall within <see cref="Size"/></exception>
-		/// <remarks><see cref="Frame.Location"/> values will update as necessary</remarks>
-		public Point Center
-		{
-			get { return _center; }
-			set
+
+        /// <summary>Gets the number of global colors defined.</summary>
+        public int NumberOfColors {
+			get
 			{
-				if (value.X < Width && value.X >= 0 && value.Y < Height && value.Y >= 0)
-				{
-					int offX = _center.X - value.X;
-					int offY = _center.Y - value.Y;
-					for (int f = 0; f < NumberOfFrames; f++)
-					{
-						_frames[f].X += offX;
-						_frames[f].Y += offY;
-					}
-					_center = value;
-				}
-				else throw new BoundaryException("value", "0,0 - " + Width + "," + Height);
+				if (_useGlobalColors) return _colors.Length;
+				else return 0;
 			}
 		}
+        #endregion
 
-		/// <summary>Gets the file name of the Act object</summary>
-		public string FileName { get { return StringFunctions.GetFileName(_filePath); } }
-
-		/// <summary>Gets the full path of the Act object</summary>
-		public string FilePath { get { return _filePath; } }
-
-		/// <summary>Gets the overall height of the Act object</summary>
-		public int Height { get { return BitConverter.ToInt32(_header, 0x20) + 1; } }
-
-		/// <summary>Gets the number of images contained within the Act object</summary>
-		public int NumberOfFrames { get { return _frames.Count; } }
-
-		/// <summary>Gets the overall size of the Act object</summary>
-		public Size Size
-		{
-			get { return new Size(Width, Height); }
-			internal set
-			{
-				ArrayFunctions.WriteToArray(value.Width - 1, _header, 0x1C);
-				ArrayFunctions.WriteToArray(value.Height - 1, _header, 0x20);
-			}
-		}
-
-		/// <summary>Gets the overall width of the Act object</summary>
-		public int Width { get { return BitConverter.ToInt32(_header, 0x1C) + 1; } }
-		#endregion
-		
-		internal void _recalculateSize()
+        internal void recalculateSize()
 		{
 			int right = 0, bottom = 0;
 			int centX = _center.X;

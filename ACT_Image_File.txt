@@ -1,7 +1,7 @@
 ACT Image File
 Author: Michael Gaisser (mjgaisser@gmail.com)
-Site: http://idmr.empirereborn.net
-Updated: 2011.11.10
+Site: https://github.com/MikeG621
+Updated: 2023.06.23
 =====
 
 The .ACT file is primarily used for backdrops and explosion graphics in TIE95
@@ -27,21 +27,24 @@ LONG	8	signed Int64
 FileHeader
 INT[FrameCount]		FrameOffsets
 Frame[FrameCount]	ImageData
+Color[GlobalColorCount]	GlobalColors
 --
 
 struct FileHeader (size 0x34)
 {
 	0x00	INT	Length
 	0x04	INT	TotalColorCount
-	0x08	LONG	Reserved (0)
-	0x10	INT	HeaderLength (0x34)
-	0x14	INT	Reserved (0)
+	0x08	INT	Reserved (0)
+	0x0C	INT	GlobalColorJump
+	0x10	INT	FrameOffsetsJump (0x34)
+	0x14	INT	Reserved (0)		[In-memory palette jump]
 	0x18	INT	FrameCount
 	0x1C	INT	ImageWidth			[zero-indexed]
 	0x20	INT	ImageHeight			[zero-indexed]
 	0x24	INT	CenterX
 	0x28	INT	CenterY
-	0x2C	LONG	Reserved(0)
+	0x2C	INT	UseGlobalColors		(0 || 0x18)
+	0x30	INT	GlobalColorCount
 }
 
 struct Frame
@@ -59,14 +62,14 @@ struct Frame
 struct FrameHeader (size 0x2C)
 {
 	0x00	INT	FrameLength
-	0x04	INT	FrameHeaderLength (0x2C)
-	0x08	INT	ImageDataOffset
-	0x0C	INT	FrameLength
+	0x04	INT	FrameColorsJump (0x2C)
+	0x08	INT	ImageDataJump (to FrameLeft)
+	0x0C	INT	Reserved (FrameLength)	[In-memory palette jump]
 	0x10	INT	FrameWidth
 	0x14	INT	FrameHeight
 	0x18	LONG	Reserved (0)
 	0x20	INT	Shift
-	0x24	INT	Reserved (0x18)
+	0x24	INT	UseFrameColors (0 || 0x18)
 	0x28	INT	ColorCount
 }
 
@@ -108,37 +111,53 @@ makes sense seeing that this came around later. The ACT is capable of holding
 multiple images like the ANIM and uses some of the same header info, and the
 pixel data is stored much like PANL.
 
-The file iself is broken into 2.5 sections. The first is the FileHeader of a
-fixed size. Next is a half section, the offset table, which is really nothing
+The file iself is broken into a few sections. The first is the FileHeader of a
+fixed size. Next is a half section, the jump table, which is really nothing
 more than a few INT offsets pointing to each frame. The list is only as long as
 it needs to be, so if there's only one image, there's only one offset.
-FrameOffset[0] = 0x34 + FrameCount * 4
+FrameOffset[0] = FrameOffsetsJump
 FrameOffset[i] = FrameOffset[i-1] + Frame[i-1].FrameLength
+or
+&Frame[i] = FrameOffsetsJump + FrameOffset[i]
 
 The remaining section is the Frames, which contain all of the image data.
+
+There is also the possibility of a Global Colors section, although I've never
+seen it actually used.  Technically speaking, the jump values allow everything
+after the FileHeader to be in a jumbled order, so I don't know if the Global
+Colors would typically appear before or after the Frames, or how they interact
+with the Frame colors when it comes to index usage if they're both used.
 
 -- FileHeader --
 
 To start it off we have the Length value, which for an *.ACT file is just the
 filesize, simple enough. TotalColorCount is the sum of ColorCount values from
-all frames. FrameCount is one-indexed, nothing fancy there. ImageWidth and
-ImageHeight however are zero-indexed, so add 1 to get the true size. The Center
-values define the pixel used to "pin" the image at a location. Typically
-they're just the Width and Height divided in half.
+all frames. The GlobalColorsJump is the offset to that array if used. The
+FrameOffsetsJump is a jump to the FrameOffsets and usually FileHeader.Length.
+The Reserved value is overwritten in-game, so this is typically left as 0.
+FrameCount is one-indexed, nothing fancy there. ImageWidth and ImageHeight
+however are zero-indexed, so add 1 to get the true size. The Center values
+define the pixel used to "pin" the image at a location. Typically they're just
+the Width and Height divided in half. The UseGlobalColors is typically 00 to
+denote they're not used, but otherwise would need to be 0x18. That would be
+followed by the GlobalColorCount if used, usually zero.
 
 -- Frame --
 
 Frames have a header of their own, starting off with the expected FrameLength
-and FrameHeaderLength values. ImageDataOffset is the offset within the frame to
-the first Row.
-ImageDataOffset = 0x2C + ColorCount * 4
+and FrameColorsJump values. Similar to the FileHeader, it is a jump to the
+FrameColors and usually FrameHeader.Length. ImageDataJump is the jump value to
+the frame extents and the standard value is below.
+ImageDataJump = 0x2C + ColorCount * 4
 
-FrameLength is repeated for good measure, followed by the frame's true size
-(one-indexed). The frame can have a size smaller than the entire image.
+Reserved is again an in-game value, but is typically the FrameLength value
+repeated. It's followed by the frame's pixel dimensions, (one-indexed). The
+frame can have a size smaller than the entire image.
 
 Shift is handy value, and the concept was taken from cockpit PANL image data.
-This will be explained in detail near the end. ColorCount gives the number of
-Colors defined in the Frame. Nothing tricky.
+This will be explained in detail near the end. Frame colors are normally used,
+so that value will be 0x18. ColorCount gives the number of Colors defined in
+the Frame. Nothing tricky.
 
 The Color values should be simple enough, each frame contains a palette of
 24-bit RGB values. Color[0] is always treated as transparent, so the actual
@@ -177,7 +196,7 @@ codes. Unlike PANL which only has two bits for NumRepeat, Shift determines how
 many bits can be used for that value. A Shift value of 03 will allow 1-8 pixels
 while Shift 04 will allow 1-16 pixels. Short codes can only be used for
 ColorIndex values of (1<<(8-Shift))-1. If ColorCount is higher, especially when
-using 255 colors, then the Repeat code should be used for all ColorIndex values
+using 256 colors, then the Repeat code should be used for all ColorIndex values
 0x10 and up for Shift 04, 0x20 and up for Shift 03. As mentioned in the
 previous paragraph, the Shift op code can be used to extend the Short code's
 range, but for the sake of filesize compression the Repeat code is better.
