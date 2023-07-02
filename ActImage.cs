@@ -19,6 +19,7 @@
 /* CHANGE LOG
  * [NEW] Global colors read support
  * [UPD] Proper use of jumps instead of fixed header lengths
+ * [UPD] renamed frame shift to lengthBitCount (private)
  * v2.1, 141214
  * [UPD] switch to MPL
  * v2.0, 121024
@@ -143,16 +144,16 @@ namespace Idmr.ImageFormat.Act
 		/// <param name="width">Width of the Frame</param>
 		/// <param name="height">Height of the Frame</param>
 		/// <param name="colors">Defined Color array to be used</param>
-		/// <param name="shift">Shift value to decode with</param>
+		/// <param name="lengthBitCount">Shift value to decode with</param>
 		/// <exception cref="ArgumentException">Data validation failure</exception>
 		/// <returns>8bppIndexed image</returns>
-		public static Bitmap DecodeImage(byte[] raw, int width, int height, Color[] colors, int shift)
+		public static Bitmap DecodeImage(byte[] raw, int width, int height, Color[] colors, int lengthBitCount)
 		{
 			Bitmap image = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
 			BitmapData bd = GraphicsFunctions.GetBitmapData(image);
 			byte[] pixelData = new byte[bd.Stride * bd.Height];
 			byte b, indexShift = 0;
-			int numShift = 0, offset = 0;
+			int offset = 0;
 			// Rows
 			for (int y = (bd.Height - 1); y >= 0; y--)
 			{
@@ -174,13 +175,13 @@ namespace Idmr.ImageFormat.Act
 					else if (b == 0xFB) // Shift code
 					{
 						indexShift = raw[offset++];
-						numShift = raw[offset++];   // this appears to always be zero
-						if (numShift != 0) System.Diagnostics.Debug.WriteLine("Non-zero Shift count: index: " + indexShift + ", num: " + numShift);
+						var unused = raw[offset++];   // this appears to always be zero
+						if (unused != 0) System.Diagnostics.Debug.WriteLine("16-bit Shift value detected: index: " + unused * 0x100 + indexShift);
 					}
 					else	// Short code
 					{
-						byte p = (byte)(b >> shift);
-						byte n = (byte)(Math.Pow(2, shift) - 1);
+						byte p = (byte)(b >> lengthBitCount);
+						byte n = (byte)(Math.Pow(2, lengthBitCount) - 1);
 						for (int j = 0; j <= (b & n); j++, x++) pixelData[pos + x] = (byte)(p + indexShift);
 					}
 				}
@@ -201,14 +202,14 @@ namespace Idmr.ImageFormat.Act
         /// <summary>Gets the encoded byte array</summary>
         /// <param name="image">Image to be encoded.</param>
         /// <param name="colors">Defined Color array to be used.</param>
-        /// <param name="shift">Shift value to encode with.</param>
-        /// <exception cref="ArgumentException"><paramref name="image"/> is not 8bppIndexed<br/><b>-or-</b><br/>Invalid <paramref name="shift"/> value.</exception>
-        /// <remarks><paramref name="image"/> must be 8bppIndexed. <paramref name="shift"/> restricted to 3-5.</remarks>
+        /// <param name="lengthBitCount">Shift value to encode with.</param>
+        /// <exception cref="ArgumentException"><paramref name="image"/> is not 8bppIndexed<br/><b>-or-</b><br/>Invalid <paramref name="lengthBitCount"/> value.</exception>
+        /// <remarks><paramref name="image"/> must be 8bppIndexed. <paramref name="lengthBitCount"/> restricted to 3-5.</remarks>
         /// <returns>Encoded byte array of the image ready to be written to disk</returns>
-        public static byte[] EncodeImage(Bitmap image, Color[] colors, int shift)
+        public static byte[] EncodeImage(Bitmap image, Color[] colors, int lengthBitCount)
 		{
 			if (image.PixelFormat != PixelFormat.Format8bppIndexed) throw new ArgumentException("image must be 8bppIndexed", "image");
-			if (shift < 3 || shift > 5) throw new ArgumentException("shift value must be 3-5", "shift");
+			if (lengthBitCount < 3 || lengthBitCount > 5) throw new ArgumentException("Bit count must be 3-5", "lengthBitCount");
 			byte[] raw = new byte[image.Width * image.Height * 2];
 			int offset = 0;
 			image.RotateFlip(RotateFlipType.RotateNoneFlipX);
@@ -231,10 +232,10 @@ namespace Idmr.ImageFormat.Act
 						}
 					}
 					catch { /* do nothing */ }
-					if ((len <= Math.Pow(2, shift) && pixels[pos + x] < (0xFF >> shift)) || (len <= (shift == 3 ? 3 : 10) && pixels[pos + x] == (0xFF >> shift)))	// allow 0xF8-0xFA
+					if ((len <= Math.Pow(2, lengthBitCount) && pixels[pos + x] < (0xFF >> lengthBitCount)) || (len <= (lengthBitCount == 3 ? 3 : 10) && pixels[pos + x] == (0xFF >> lengthBitCount)))	// allow 0xF8-0xFA
 					{	// Short code
 						byte b = (byte)(len - 1);
-						b |= (byte)(pixels[pos + x] << shift);
+						b |= (byte)(pixels[pos + x] << lengthBitCount);
 						raw[offset++] = b;
 					}
 					else if (pixels[pos + x] == 0)

@@ -1,7 +1,7 @@
 ACT Image File
 Author: Michael Gaisser (mjgaisser@gmail.com)
 Site: https://github.com/MikeG621
-Updated: 2023.06.23
+Updated: 2023.07.01
 =====
 
 The .ACT file is primarily used for backdrops and explosion graphics in TIE95
@@ -68,7 +68,7 @@ struct FrameHeader (size 0x2C)
 	0x10	INT	FrameWidth
 	0x14	INT	FrameHeight
 	0x18	LONG	Reserved (0)
-	0x20	INT	Shift
+	0x20	INT	LengthBitCount
 	0x24	INT	UseFrameColors (0 || 0x18)
 	0x28	INT	ColorCount
 }
@@ -91,8 +91,7 @@ struct OpCode
 {
 	BYTE	Value
 	#if (Value==0xFB) (Shift)
-	BYTE	IndexShift
-	BYTE	NumRepeat
+	SHORT	IndexShift
 	#elseif (Value==0xFC) (Blank)
 	BYTE	NumRepeat
 	#elseif (Value==0xFD) (Repeat)
@@ -154,10 +153,10 @@ Reserved is again an in-game value, but is typically the FrameLength value
 repeated. It's followed by the frame's pixel dimensions, (one-indexed). The
 frame can have a size smaller than the entire image.
 
-Shift is handy value, and the concept was taken from cockpit PANL image data.
-This will be explained in detail near the end. Frame colors are normally used,
-so that value will be 0x18. ColorCount gives the number of Colors defined in
-the Frame. Nothing tricky.
+LengthBitCount is handy value, and the concept was taken from cockpit PANL
+image data. This will be explained in detail near the end. Frame colors are
+normally used, so that value will be 0x18. ColorCount gives the number of
+Colors defined in the Frame. Nothing tricky.
 
 The Color values should be simple enough, each frame contains a palette of
 24-bit RGB values. Color[0] is always treated as transparent, so the actual
@@ -182,24 +181,27 @@ The pixel data is stored right-to-left, bottom to top, so a FlipXY is required
 if you're reading the pixels normally. Idmr.ImageFormat.Act.dll takes this into
 account so what you import is what you see in-game.
 
-FB (Shift) is a new op code. It takes two arguments, IndexShift and NumRepeat.
-The Shift code typically preceeds a Short code (explained below) and usually
-does not repeat. The IndexShift value is added to the Index value of the Short
-code and the resulting value is used as the Short's new Index value. Now, I
-think I understand why this op code was created, as it technically allows
-high-Index values to use the Short codes, but it actually hurts compression,
-as this method uses four bytes per operation, when using the Repeat code only
+FB (Shift) is a new op code. It takes one SHORT argument, IndexShift. Although
+it's a 16-bit value, in reality the second byte is truncated so it's in effect
+a BYTE IndexShift and an unused value that should be zero. This might have
+played a part with the Global colors, as I've seen evidence that it was not
+limited to 256 colors. The IndexShift value is added to the Index value of all
+following Short codes until replaced and the resulting value is used as the
+Short's new Index value. Now, this op code technically allows high-Index values
+to use the Short codes, but it actually hurts compression for most images, as
+this method uses four bytes per operation, when using the Repeat code only
 takes up three bytes.
 
-The Shift value comes into play for all other values, designated as Short
-codes. Unlike PANL which only has two bits for NumRepeat, Shift determines how
-many bits can be used for that value. A Shift value of 03 will allow 1-8 pixels
-while Shift 04 will allow 1-16 pixels. Short codes can only be used for
-ColorIndex values of (1<<(8-Shift))-1. If ColorCount is higher, especially when
-using 256 colors, then the Repeat code should be used for all ColorIndex values
-0x10 and up for Shift 04, 0x20 and up for Shift 03. As mentioned in the
-previous paragraph, the Shift op code can be used to extend the Short code's
-range, but for the sake of filesize compression the Repeat code is better.
+The LengthBitCount value comes into play for all other codes, designated as
+Short codes. Unlike PANL which only has two bits for NumRepeat, the BitCount
+determines how many bits can be used for that value. A BitCount value of 03
+will allow 1-8 pixels while a vlue of 04 will allow 1-16 pixels. Short codes
+can only be used for ColorIndex values of (1<<(8-BitCount))-1. If ColorCount is
+higher, especially when using 256 colors, then the Repeat code should be used
+for all ColorIndex values 0x10 and up for BitCount 04, 0x20 and up for BitCount
+03. As mentioned in the previous paragraph, the Shift op code can be used to
+extend the Short code's range, but for the sake of filesize compression the
+Repeat code is better.
 
 You'll note that in the Row definition, OpCode[] is of an undefined size. This
 is the only portion of the file that cannot be determined without iteration,

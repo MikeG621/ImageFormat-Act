@@ -57,14 +57,14 @@ namespace Idmr.ImageFormat.Act
 				System.Diagnostics.Debug.WriteLine("Colors: " + NumberOfColors);
 
 				for (int c = 0, pos = colorsJump; c < _colors.Length; c++, pos += 4)
-					_colors[c] = Color.FromArgb(raw[pos], raw[pos + 1], raw[pos + 2]);  // Red, Green, Blue
+					_colors[c] = Color.FromArgb(raw[pos], raw[pos + 1], raw[pos + 2]);  // Red, Green, Blue, Alpha unused
 			}
 			_location = new Point(BitConverter.ToInt32(raw, imageJump), BitConverter.ToInt32(raw, imageJump + 4));	// FrameLeft, FrameTop
 			System.Diagnostics.Debug.WriteLine("Location: " + X + "," + Y + "\r\nSize: " + Width + "," + Height);
 			_rows = new byte[raw.Length - imageJump - 0x10];
 			ArrayFunctions.TrimArray(raw, imageJump + 0x10, _rows);
-			if (_useFrameColors) _image = ActImage.DecodeImage(_rows, Width, Height, _colors, _shift);
-			else _image = ActImage.DecodeImage(_rows, Width, Height, _parent.GlobalColors, _shift);
+			if (_useFrameColors) _image = ActImage.DecodeImage(_rows, Width, Height, _colors, _lengthBitCount);
+			else _image = ActImage.DecodeImage(_rows, Width, Height, _parent.GlobalColors, _lengthBitCount);
         }
 
         /// <summary>Creates a new Frame with the given <see cref="PixelFormat.Format8bppIndexed"/> image</summary>
@@ -148,8 +148,8 @@ namespace Idmr.ImageFormat.Act
 
                 _image = value;
                 _colors = GraphicsFunctions.GetTrimmedColors(_image);
-                setShift();
-                _rows = ActImage.EncodeImage(_image, _colors, _shift);
+                setBitCount();
+                _rows = ActImage.EncodeImage(_image, _colors, _lengthBitCount);
                 updateHeader();
                 if (_location.X == 621 && _location.Y == 621) Location = new Point(-Width / 2, -Height / 2);
                 _parent.recalculateSize();
@@ -244,13 +244,13 @@ namespace Idmr.ImageFormat.Act
         #endregion public properties
 
         #region private methods
-        void setShift()
+        void setBitCount()
 		{
-			int shift = 3;	// Shift=3, allows 8px lines, 00-1F ColorIndex
-			if (_image.Width <= 16) shift = 4;	// Shift=4 allows 16px lines, 00-0F ColorIndex
-			if (_colors.Length <= 8) shift = 5;	// Shift=5 allows 32px, 00-08 ColorIndex
-			else if (_colors.Length <= 16) shift = 4;
-			_shift = shift;
+			int bitCount = 3;	// Shift=3, allows 8px lines, 00-1F ColorIndex
+			if (_image.Width <= 16) bitCount = 4;	// Shift=4 allows 16px lines, 00-0F ColorIndex
+			if (_colors.Length <= 8) bitCount = 5;	// Shift=5 allows 32px, 00-08 ColorIndex
+			else if (_colors.Length <= 16) bitCount = 4;
+			_lengthBitCount = bitCount;
 		}
 		
 		void updateHeader()
@@ -272,7 +272,7 @@ namespace Idmr.ImageFormat.Act
 		#endregion private methods
 		
 		#region private properties
-		internal int _shift
+		int _lengthBitCount
         {
             get => BitConverter.ToInt32(_header, 0x20);
             set => ArrayFunctions.WriteToArray(value, _header, 0x20);
