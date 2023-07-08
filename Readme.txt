@@ -2,13 +2,21 @@ Idmr.ImageFormat.Act.dll
 ========================
 
 Author: Michael Gaisser (mjgaisser@gmail.com)
-Version: 2.1
-Date: 2014.12.14
+Version: 2.2
+Date: 2023.07.08
 
 Library for editing LucasArts *.ACT backdrop files
 
 ==========
 Version History
+
+v2.2 - 08 Jul 2023
+ - Added ability to read Global colors
+   - GlobalColors, UseGlobalColors and NumberOfColors added
+   - Not otherwise processed or used at this time
+ - Added Frame.UseFrameColors
+ - Will throw an error on load if both UseGlobalColors and UseFrameColors are false
+ - New EncodeImage() overload. The previous one ignored colors anyway.
 
 v2.1 - 14 Dec 2014
  - change to MPL
@@ -30,9 +38,9 @@ Programmer's reference can be found in help/Idmr.ImageFormat.Act.chm
 ==========
 Copyright Information
 
-Copyright (C) Michael Gaisser, 2009-2012
+Copyright (C) Michael Gaisser, 2009-2023
 This library file and related files are licensed under the Mozilla Public License
-v2.0 or later.  See MPL.txt for further details.
+v2.0 or later.  See License.txt for further details.
 
 "Star Wars" and related items are trademarks of LucasFilm Ltd and
 LucasArts Entertainment Co.

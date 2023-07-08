@@ -278,10 +278,10 @@ namespace Idmr.ImageFormat.Act
             return trimmedRaw;
         }
 
-            /// <summary>Writes the Act object to its original location</summary>
-            /// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
-            /// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
-            public void Save()
+		/// <summary>Writes the Act object to its original location</summary>
+		/// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
+		/// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
+		public void Save()
 		{
 			if (!_filePath.ToUpper().EndsWith(_extension))
 				throw new InvalidOperationException("Must define temporary location for LFD XACT resources");
@@ -290,9 +290,9 @@ namespace Idmr.ImageFormat.Act
 			//TODO: convert Global Colors to frame colors
 			try
 			{
-				if (File.Exists(_filePath)) File.Copy(_filePath, tempFile);	// create backup
+				if (File.Exists(_filePath)) File.Copy(_filePath, tempFile); // create backup
 				File.Delete(_filePath);
-				
+
 				// FileHeader
 				int length = _fileHeaderLength;
 				int totalColorCount = 0;
@@ -313,7 +313,7 @@ namespace Idmr.ImageFormat.Act
 				frameOffsets[0] = _fileHeaderLength + NumberOfFrames * 4;
 				for (int f = 1; f < NumberOfFrames; f++) frameOffsets[f] = frameOffsets[f - 1] + _frames[f - 1]._length;
 				ArrayFunctions.TrimArray(frameOffsets, 0, frameOffsetsBytes);
-				
+
 				fs = File.OpenWrite(_filePath);
 				BinaryWriter bw = new BinaryWriter(fs);
 				bw.Write(_header);
@@ -333,13 +333,13 @@ namespace Idmr.ImageFormat.Act
 				}
 				fs.SetLength(length);
 				fs.Close();
-				File.Delete(tempFile);	// delete backup if it exists
+				File.Delete(tempFile);  // delete backup if it exists
 			}
 			catch (Exception x)
 			{
 				fs?.Close();
-				if (File.Exists(tempFile)) File.Copy(tempFile, _filePath);	// restore backup if it exists
-				File.Delete(tempFile);	// delete backup if it exists
+				if (File.Exists(tempFile)) File.Copy(tempFile, _filePath);  // restore backup if it exists
+				File.Delete(tempFile);  // delete backup if it exists
 				System.Diagnostics.Debug.WriteLine(x.StackTrace);
 				throw new SaveFileException(x);
 			}
