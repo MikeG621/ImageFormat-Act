@@ -10,13 +10,14 @@
  * library is free of defects, merchantable, fit for a particular purpose or
  * non-infringing. See the full license text for more details.
  *
- * If a copy of the MPL (MPL.txt) was not distributed with this file,
+ * If a copy of the MPL (License.txt) was not distributed with this file,
  * you can obtain one at http://mozilla.org/MPL/2.0/.
  * 
- * VERSION: 2.1+
+ * VERSION: 2.2
  */
 
 /* CHANGE LOG
+ * v2.2, 230708
  * [NEW] Global colors read support
  * [UPD] Proper use of jumps instead of fixed header lengths
  * [UPD] renamed frame shift to lengthBitCount (private)
@@ -208,64 +209,79 @@ namespace Idmr.ImageFormat.Act
         /// <returns>Encoded byte array of the image ready to be written to disk</returns>
         public static byte[] EncodeImage(Bitmap image, Color[] colors, int lengthBitCount)
 		{
-			if (image.PixelFormat != PixelFormat.Format8bppIndexed) throw new ArgumentException("image must be 8bppIndexed", "image");
-			if (lengthBitCount < 3 || lengthBitCount > 5) throw new ArgumentException("Bit count must be 3-5", "lengthBitCount");
-			byte[] raw = new byte[image.Width * image.Height * 2];
-			int offset = 0;
-			image.RotateFlip(RotateFlipType.RotateNoneFlipX);
-			// Rows
-			BitmapData bd = GraphicsFunctions.GetBitmapData(image);
-			byte[] pixels = new byte[bd.Stride * bd.Height];
-			GraphicsFunctions.CopyImageToBytes(bd, pixels);
-			image.UnlockBits(bd);
-			image.RotateFlip(RotateFlipType.RotateNoneFlipX);
-			for (int y = (bd.Height - 1); y >= 0; y--)
-			{
-				for (int x = 0, pos = bd.Stride * y, len = 1; x < bd.Width; )
-				{
-					try
-					{	// throws on last row
-						if ((x + len) != bd.Width && pixels[pos + x] == pixels[pos + x + len])
-						{
-							len++;
-							continue;
-						}
-					}
-					catch { /* do nothing */ }
-					if ((len <= Math.Pow(2, lengthBitCount) && pixels[pos + x] < (0xFF >> lengthBitCount)) || (len <= (lengthBitCount == 3 ? 3 : 10) && pixels[pos + x] == (0xFF >> lengthBitCount)))	// allow 0xF8-0xFA
-					{	// Short code
-						byte b = (byte)(len - 1);
-						b |= (byte)(pixels[pos + x] << lengthBitCount);
-						raw[offset++] = b;
-					}
-					else if (pixels[pos + x] == 0)
-					{	// Blank code
-						raw[offset++] = 0xFC;
-						raw[offset++] = (byte)(len - 1);
-					}
-					else
-					{	// Repeat code
-						raw[offset++] = 0xFD;
-						raw[offset++] = (byte)(len - 1);
-						raw[offset++] = pixels[pos + x];
-					}
-					// not going to use Shift codes
-					x += len;
-					len = 1;
-				}
-				raw[offset++] = 0xFE;	// EndRow
-			}
-			raw[offset++] = 0xFF;	// EndFrame
-			byte[] trimmedRaw = new byte[offset];
-			ArrayFunctions.TrimArray(raw, 0, trimmedRaw);
-			return trimmedRaw;
-			//TODO: also need to trim colors
+			/* CURRENTLY DEPRECATED
+			 * If this overload stays long-term, since this is a static function I'm wondering if this should act like Frame.Image.set and trim the colors at the same time.
+			 * Never actually used the colors in the signature, anyway
+			 * Don't want to do that just yet, though
+			 */
+            return EncodeImage(image, lengthBitCount);
 		}
 
-        /// <summary>Writes the Act object to its original location</summary>
-        /// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
-        /// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
-        public void Save()
+        /// <summary>Gets the encoded byte array</summary>
+        /// <param name="image">Image to be encoded.</param>
+        /// <param name="lengthBitCount">Shift value to encode with.</param>
+        /// <exception cref="ArgumentException"><paramref name="image"/> is not 8bppIndexed<br/><b>-or-</b><br/>Invalid <paramref name="lengthBitCount"/> value.</exception>
+        /// <remarks><paramref name="image"/> must be 8bppIndexed. <paramref name="lengthBitCount"/> restricted to 3-5.</remarks>
+        /// <returns>Encoded byte array of the image ready to be written to disk</returns>
+        public static byte[] EncodeImage(Bitmap image, int lengthBitCount)
+		{
+            if (image.PixelFormat != PixelFormat.Format8bppIndexed) throw new ArgumentException("image must be 8bppIndexed", "image");
+            if (lengthBitCount < 3 || lengthBitCount > 5) throw new ArgumentException("Bit count must be 3-5", "lengthBitCount");
+            byte[] raw = new byte[image.Width * image.Height * 2];
+            int offset = 0;
+            image.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            // Rows
+            BitmapData bd = GraphicsFunctions.GetBitmapData(image);
+            byte[] pixels = new byte[bd.Stride * bd.Height];
+            GraphicsFunctions.CopyImageToBytes(bd, pixels);
+            image.UnlockBits(bd);
+            image.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            for (int y = (bd.Height - 1); y >= 0; y--)
+            {
+                for (int x = 0, pos = bd.Stride * y, len = 1; x < bd.Width;)
+                {
+                    try
+                    {   // throws on last row
+                        if ((x + len) != bd.Width && pixels[pos + x] == pixels[pos + x + len])
+                        {
+                            len++;
+                            continue;
+                        }
+                    }
+                    catch { /* do nothing */ }
+                    if ((len <= Math.Pow(2, lengthBitCount) && pixels[pos + x] < (0xFF >> lengthBitCount)) || (len <= (lengthBitCount == 3 ? 3 : 10) && pixels[pos + x] == (0xFF >> lengthBitCount)))   // allow 0xF8-0xFA
+                    {   // Short code
+                        byte b = (byte)(len - 1);
+                        b |= (byte)(pixels[pos + x] << lengthBitCount);
+                        raw[offset++] = b;
+                    }
+                    else if (pixels[pos + x] == 0)
+                    {   // Blank code
+                        raw[offset++] = 0xFC;
+                        raw[offset++] = (byte)(len - 1);
+                    }
+                    else
+                    {   // Repeat code
+                        raw[offset++] = 0xFD;
+                        raw[offset++] = (byte)(len - 1);
+                        raw[offset++] = pixels[pos + x];
+                    }
+                    // not going to use Shift codes
+                    x += len;
+                    len = 1;
+                }
+                raw[offset++] = 0xFE;   // EndRow
+            }
+            raw[offset++] = 0xFF;   // EndFrame
+            byte[] trimmedRaw = new byte[offset];
+            ArrayFunctions.TrimArray(raw, 0, trimmedRaw);
+            return trimmedRaw;
+        }
+
+            /// <summary>Writes the Act object to its original location</summary>
+            /// <exception cref="SaveFileException">Error saving file. Original unchanged if applicable</exception>
+            /// <exception cref="InvalidOperationException">Attempted to save XACT resource without defining a new location</exception>
+            public void Save()
 		{
 			if (!_filePath.ToUpper().EndsWith(_extension))
 				throw new InvalidOperationException("Must define temporary location for LFD XACT resources");

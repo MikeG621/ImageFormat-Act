@@ -4,10 +4,11 @@
  * Licensed under the MPL v2.0 or later
  * 
  * Full notice in ActImage.cs
- * VERSION: 2.1+
+ * VERSION: 2.2
  */
 
 /* CHANGE LOG
+ * v2.2, 230708
  * [UPD] using jumps properly now
  * [NEW] UseFrameColors, support for Global colors
  * v2.1, 141214
@@ -149,7 +150,7 @@ namespace Idmr.ImageFormat.Act
                 _image = value;
                 _colors = GraphicsFunctions.GetTrimmedColors(_image);
                 setBitCount();
-                _rows = ActImage.EncodeImage(_image, _colors, _lengthBitCount);
+                _rows = ActImage.EncodeImage(_image, _lengthBitCount);
                 updateHeader();
                 if (_location.X == 621 && _location.Y == 621) Location = new Point(-Width / 2, -Height / 2);
                 _parent.recalculateSize();
